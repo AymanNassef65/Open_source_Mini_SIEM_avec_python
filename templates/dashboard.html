@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> CyberWolf SIEM | Security Operations Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-dark: #020617;
+            --bg-card: #0b1120;
+            --neon-cyan: #00f2ff;
+            --neon-pink: #d7056e;
+            --danger: #ff4d4d;
+            --warning: #ffcc00;
+            --success: #00ff88;
+            --text-main: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            pointer-events: none;
+            background-size: 100% 2px, 3px 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+        }
+
+        .live-indicator {
+            font-size: 0.9rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--neon-cyan);
+            transform: translateY(-5px);
+        }
+
+        .card h2 { font-size: 0.8rem; margin: 0; color: #94a3b8; text-transform: uppercase; }
+
+        .card .value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 10px 0 0 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 1000px) { .main-content { grid-template-columns: 1fr; } }
+
+        .section-box {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%; 
+            margin-top: 20px;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+
+        th {
+            background: rgba(0, 242, 255, 0.05);
+            color: var(--neon-cyan);
+            padding: 12px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem; }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+
+        .chart-container { height: 300px; margin-top: 20px; }
+
+        /* --- الإضافات الجديدة ديال الـ CSS لي مقصتهاش --- */
+        #alerts-table-body td {
+            padding: 12px 10px;
+            vertical-align: middle;
+        }
+
+        .btn-primary {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: var(--neon-cyan);
+            color: #0d1117;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .table-scroll {
+            max-height: 450px; 
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-cyan) transparent;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1><i class="fas fa-shield-virus"></i> CyberWolf SIEM</h1>
+        <div style="color: #64748b; font-size: 0.8rem; margin-top: 5px;">Security Intelligence Monitoring</div>
+    </div>
+    <div class="live-indicator">
+        <div class="pulse"></div> LIVE SYSTEM FEED
+    </div>
+    <button onclick="clearSystemLogs()" style="background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid var(--danger); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+        <i class="fas fa-trash-alt"></i> RESET SYSTEM
+    </button>
+</header>
+
+<div class="stats-grid">
+    <div class="card"><h2>Total Logs</h2><p class="value" id="count-logs" style="color: var(--neon-cyan);">0</p></div>
+    <div class="card"><h2>Active Alerts</h2><p class="value" id="count-alerts" style="color: var(--danger);">0</p></div>
+    <div class="card"><h2>Failed Logins</h2><p class="value" id="count-failed" style="color: var(--warning);">0</p></div>
+    <div class="card"><h2>Access Denied</h2><p class="value" id="count-access" style="color: var(--neon-pink);">0</p></div>
+</div>
+
+<div class="main-content">
+    <div class="section-box">
+        <h3 style="margin-top:0;"><i class="fas fa-bolt"></i> Recent Security Events</h3>
+        <table class="simple-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Time</th>
+                    <th style="width: 70%;">Attack Details & Description</th> 
+                    <th style="width: 15%;">Severity</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-table-body"></tbody>
+        </table>
+    </div>
+
+    <div class="section-box">
+        <h3 style="margin-top:0;"><i class="fas fa-chart-bar"></i> Event Distribution</h3>
+        <div class="chart-container"><canvas id="eventChart"></canvas></div>
+    </div>
+
+    <div class="section-box" style="grid-column: 1 / -1; margin-top: 10px;">
+        <h3><i class="fas fa-list-alt"></i> Detailed Logs History</h3>
+        <div class="table-scroll"> 
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Timestamp</th>
+                        <th style="width: 65%;">Detailed Message</th> 
+                        <th style="width: 15%;">Category</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body"></tbody>
+            </table>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; padding-bottom: 10px;">
+            <button id="load-more-btn" onclick="showMoreLogs()" class="btn-primary">
+                <i class="fas fa-plus"></i> Show More
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart = null;
+    let visibleLogs = 10;
+
+    // أيقونات الهجمات
+    const attackIcons = {
+        "SQL Injection": "fa-database",
+        "Brute Force": "fa-key",
+        "Port Scanning": "fa-satellite-dish",
+        "Access Denied": "fa-user-lock",
+        "DDoS Attempt": "fa-network-wired",
+        "Ransomware": "fa-file-medical-alt",
+        "Credential Stuffing": "fa-users-slash",
+        "Privilege Escalation": "fa-user-ninja", // هادي هي اللي كانت ناقصة
+        "Normal": "fa-check-circle"
+    };
+
+    // أوصاف الهجمات
+    const attackDescriptions = {
+        "SQL Injection": "Attempt to manipulate database via malicious queries.",
+        "Brute Force": "Multiple failed login attempts detected.",
+        "Port Scanning": "Network reconnaissance and port probing.",
+        "Access Denied": "Unauthorized attempt to access restricted resources.",
+        "Ransomware": "Suspicious file encryption or ransomware signature.",
+        "DDoS Attempt": "High volume volumetric traffic flood detected.",
+        "Credential Stuffing": "Mass login attempts using leaked credentials.",
+        "Privilege Escalation": "Attempt to gain unauthorized root/admin rights.",
+        "Normal": "Standard system activity and logs."
+    };
+
+    function getSeverityColor(sev) {
+        if (sev === "Critical") return "var(--danger)";
+        if (sev === "High") return "#ff7b00"; // Orange
+        if (sev === "Medium") return "var(--warning)"; // Yellow
+        return "var(--success)"; // Low/Normal
+    }
+
+
+    async function clearSystemLogs() {
+        if (confirm("Are you sure you want to clear all security logs and alerts?")) {
+            try {
+                await fetch('/api/clear_logs', { method: 'POST' });
+                updateDashboard(); 
+            } catch (e) { console.error("Failed to clear logs:", e); }
+        }
+    }
+
+    function getAttackColor(attackName) {
+        const name = attackName.toUpperCase();
+        if (name.includes('SQL') || name.includes('RANSOM') || name.includes('DDOS') || name.includes('PRIVILEGE')) return 'rgba(255, 77, 77, 0.85)';
+        if (name.includes('BRUTE') || name.includes('DENIED')) return 'rgba(255, 123, 0, 0.85)';
+        return 'rgba(0, 242, 255, 0.6)';
+    }
+
+    async function updateDashboard() {
+        try {
+            const response = await fetch('/api/data');
+            const data = await response.json();
+
+            // 1. Stats
+            document.getElementById('count-logs').innerText = data.log_count;
+            document.getElementById('count-alerts').innerText = data.alert_count;
+            document.getElementById('count-failed').innerText = data.failed_logins;
+            document.getElementById('count-access').innerText = data.access_denied;
+
+            // 2. Recent Threats Table
+            const tableBody = document.querySelector('#alerts-table-body');
+            tableBody.innerHTML = ''; 
+
+            data.alerts.slice(0, 6).forEach(alert => {
+                const type = alert[3] || "Security Alert";
+                const msg = alert[1];
+                
+                // استخراج الوقت بذكاء
+                let time = "00:00:00";
+                const timeMatch = msg.match(/(\d{2}:\d{2}:\d{2})/);
+                if (timeMatch) time = timeMatch[1];
+                else {
+                    const now = new Date();
+                    time = now.getHours().toString().padStart(2, '0') + ":" + 
+                           now.getMinutes().toString().padStart(2, '0') + ":" + 
+                           now.getSeconds().toString().padStart(2, '0');
+                }
+
+                let color = "var(--success)";
+                if (alert[2] === "Critical") color = "var(--danger)";
+                else if (alert[2] === "High") color = "#ff7b00";
+
+                const icon = attackIcons[type] || "fa-shield-alt";
+
+                tableBody.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace; color: var(--neon-cyan); font-weight: bold;">${time}</td>
+                        <td>
+                            <div style="font-weight: bold; font-size: 0.9rem;"><i class="fas ${icon}" style="margin-right:8px; opacity:0.6"></i>${type}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${attackDescriptions[type] || "Suspicious activity detected."}</div>
+                        </td>
+                        <td><span class="badge" style="border: 1px solid ${color}; color: ${color}; background: ${color}1a;">${alert[2]}</span></td>
+                    </tr>`;
+            });
+
+            // 3. Detailed History
+            const historyBody = document.querySelector('#history-table-body');
+            if (historyBody) {
+                historyBody.innerHTML = '';
+                data.all_logs.slice(0, visibleLogs).forEach(log => {
+                    historyBody.innerHTML += `
+                        <tr>
+                            <td style="color: #94a3b8; font-size: 0.85rem;">${log[0]}</td>
+                            <td style="font-family: monospace; color: #00ffcc; font-size: 0.85rem;">${log[1]}</td>
+                            <td><span style="color: #cbd5e1; font-size: 0.8rem; background: #1e293b; padding: 2px 6px; border-radius: 4px;">${log[2]}</span></td>
+                        </tr>`;
+                });
+                const loadMoreBtn = document.getElementById('load-more-btn');
+                if (loadMoreBtn) loadMoreBtn.style.display = (visibleLogs >= data.all_logs.length) ? 'none' : 'inline-block';
+            }
+
+            // 4. Chart Sync
+            const ctx = document.getElementById('eventChart').getContext('2d');
+            const chartData = {
+                labels: data.event_stats.map(s => s[0]),
+                datasets: [{
+                    label: 'Threat Intensity',
+                    data: data.event_stats.map(s => s[1]),
+                    backgroundColor: data.event_stats.map(s => getAttackColor(s[0])),
+                    borderColor: '#00f2ff', borderWidth: 1, borderRadius: 5
+                }]
+            };
+
+            if (!window.myChart) {
+                window.myChart = new Chart(ctx, {
+                    type: 'bar', data: chartData,
+                    options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { beginAtZero: true } } }
+                });
+            } else {
+                window.myChart.data = chartData; window.myChart.update('none');
+            }
+
+        } catch (e) { console.error("Dashboard Sync Error:", e); }
+    }
+
+    function showMoreLogs() { visibleLogs += 10; updateDashboard(); }
+    setInterval(updateDashboard, 3000);
+    updateDashboard();
+</script>
+</body>
+</html>
