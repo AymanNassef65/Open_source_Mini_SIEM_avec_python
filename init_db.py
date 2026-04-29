@@ -14,13 +14,14 @@ def initialize():
             os.remove(DB_PATH)
             print("[*] Ancienne base de données supprimée.")
         except PermissionError:
-            print("[!] Erreur : Ferme app.py ou main.py avant de réinitialiser la DB !")
+            print("[!] Erreur : Fermez app.py ou main.py avant de réinitialiser la DB !")
             return
 
     conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL;")
     cursor = conn.cursor()
 
-    # 1. Table LOGS : Historique complet de tout ce qui passe
+    # 1. Table LOGS : Historique complet de tous les événements
     cursor.execute("""
     CREATE TABLE logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,8 +30,7 @@ def initialize():
         attack_type TEXT
     )""")
 
-    # 2. Table ALERTS : Uniquement les détections critiques pour le Dashboard
-    # Ajout de 'attack_type' ici aussi pour faciliter les graphiques
+    # 2. Table ALERTS : Détections critiques pour le Dashboard
     cursor.execute('''CREATE TABLE IF NOT EXISTS alerts 
                   (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                    message TEXT, 

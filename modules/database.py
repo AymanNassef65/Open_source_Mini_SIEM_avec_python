@@ -3,7 +3,9 @@ import sqlite3
 DB_PATH = "database/siem.db"
 
 def connect_db():
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
 
 def init_db():
     conn = connect_db()
@@ -42,7 +44,7 @@ def insert_log(timestamp, event, attack_type="Normal"):
     conn.close()
 
 def insert_alert(message, severity, attack_type="Unknown"):
-    conn = sqlite3.connect(DB_PATH)
+    conn = connect_db()
     cursor = conn.cursor()
     # On s'assure d'insérer les 3 valeurs
     cursor.execute("INSERT INTO alerts (message, severity, attack_type) VALUES (?, ?, ?)", 

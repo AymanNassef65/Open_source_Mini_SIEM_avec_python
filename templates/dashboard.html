@@ -155,7 +155,7 @@
 
         .chart-container { height: 300px; margin-top: 20px; }
 
-        /* --- الإضافات الجديدة ديال الـ CSS لي مقصتهاش --- */
+        /* Styles supplémentaires */
         #alerts-table-body td {
             padding: 12px 10px;
             vertical-align: middle;
@@ -205,20 +205,20 @@
 
 <div class="stats-grid">
     <div class="card"><h2>Total Logs</h2><p class="value" id="count-logs" style="color: var(--neon-cyan);">0</p></div>
-    <div class="card"><h2>Active Alerts</h2><p class="value" id="count-alerts" style="color: var(--danger);">0</p></div>
-    <div class="card"><h2>Failed Logins</h2><p class="value" id="count-failed" style="color: var(--warning);">0</p></div>
-    <div class="card"><h2>Access Denied</h2><p class="value" id="count-access" style="color: var(--neon-pink);">0</p></div>
+    <div class="card"><h2>Alertes Actives</h2><p class="value" id="count-alerts" style="color: var(--danger);">0</p></div>
+    <div class="card"><h2>Connexions Échouées</h2><p class="value" id="count-failed" style="color: var(--warning);">0</p></div>
+    <div class="card"><h2>Accès Refusés</h2><p class="value" id="count-access" style="color: var(--neon-pink);">0</p></div>
 </div>
 
 <div class="main-content">
     <div class="section-box">
-        <h3 style="margin-top:0;"><i class="fas fa-bolt"></i> Recent Security Events</h3>
+        <h3 style="margin-top:0;"><i class="fas fa-bolt"></i> Événements de Sécurité Récents</h3>
         <table class="simple-table">
             <thead>
                 <tr>
-                    <th style="width: 15%;">Time</th>
-                    <th style="width: 70%;">Attack Details & Description</th> 
-                    <th style="width: 15%;">Severity</th>
+                    <th style="width: 15%;">Heure</th>
+                    <th style="width: 70%;">Détails & Description de l'Attaque</th> 
+                    <th style="width: 15%;">Sévérité</th>
                 </tr>
             </thead>
             <tbody id="alerts-table-body"></tbody>
@@ -226,19 +226,19 @@
     </div>
 
     <div class="section-box">
-        <h3 style="margin-top:0;"><i class="fas fa-chart-bar"></i> Event Distribution</h3>
+        <h3 style="margin-top:0;"><i class="fas fa-chart-bar"></i> Distribution des Événements</h3>
         <div class="chart-container"><canvas id="eventChart"></canvas></div>
     </div>
 
     <div class="section-box" style="grid-column: 1 / -1; margin-top: 10px;">
-        <h3><i class="fas fa-list-alt"></i> Detailed Logs History</h3>
+        <h3><i class="fas fa-list-alt"></i> Historique Détaillé des Logs</h3>
         <div class="table-scroll"> 
             <table class="history-table">
                 <thead>
                     <tr>
-                        <th style="width: 20%;">Timestamp</th>
-                        <th style="width: 65%;">Detailed Message</th> 
-                        <th style="width: 15%;">Category</th>
+                        <th style="width: 20%;">Horodatage</th>
+                        <th style="width: 65%;">Message Détaillé</th> 
+                        <th style="width: 15%;">Catégorie</th>
                     </tr>
                 </thead>
                 <tbody id="history-table-body"></tbody>
@@ -247,7 +247,7 @@
         
         <div style="text-align: center; margin-top: 20px; padding-bottom: 10px;">
             <button id="load-more-btn" onclick="showMoreLogs()" class="btn-primary">
-                <i class="fas fa-plus"></i> Show More
+                <i class="fas fa-plus"></i> Voir Plus
             </button>
         </div>
     </div>
@@ -257,7 +257,7 @@
     let myChart = null;
     let visibleLogs = 10;
 
-    // أيقونات الهجمات
+    // Icônes pour chaque type d'attaque
     const attackIcons = {
         "SQL Injection": "fa-database",
         "Brute Force": "fa-key",
@@ -266,37 +266,37 @@
         "DDoS Attempt": "fa-network-wired",
         "Ransomware": "fa-file-medical-alt",
         "Credential Stuffing": "fa-users-slash",
-        "Privilege Escalation": "fa-user-ninja", // هادي هي اللي كانت ناقصة
+        "Privilege Escalation": "fa-user-ninja",
         "Normal": "fa-check-circle"
     };
 
-    // أوصاف الهجمات
+    // Descriptions des types d'attaques
     const attackDescriptions = {
-        "SQL Injection": "Attempt to manipulate database via malicious queries.",
-        "Brute Force": "Multiple failed login attempts detected.",
-        "Port Scanning": "Network reconnaissance and port probing.",
-        "Access Denied": "Unauthorized attempt to access restricted resources.",
-        "Ransomware": "Suspicious file encryption or ransomware signature.",
-        "DDoS Attempt": "High volume volumetric traffic flood detected.",
-        "Credential Stuffing": "Mass login attempts using leaked credentials.",
-        "Privilege Escalation": "Attempt to gain unauthorized root/admin rights.",
-        "Normal": "Standard system activity and logs."
+        "SQL Injection": "Tentative de manipulation de la base de données via des requêtes malveillantes.",
+        "Brute Force": "Multiples tentatives de connexion échouées détectées.",
+        "Port Scanning": "Reconnaissance réseau et sondage de ports.",
+        "Access Denied": "Tentative non autorisée d'accéder à des ressources restreintes.",
+        "Ransomware": "Chiffrement de fichiers suspect ou signature de ransomware.",
+        "DDoS Attempt": "Volume élevé de trafic flood volumétrique détecté.",
+        "Credential Stuffing": "Tentatives de connexion massives utilisant des identifiants fuité.",
+        "Privilege Escalation": "Tentative d'obtention de droits root/admin non autorisés.",
+        "Normal": "Activité système standard et logs normaux."
     };
 
     function getSeverityColor(sev) {
         if (sev === "Critical") return "var(--danger)";
         if (sev === "High") return "#ff7b00"; // Orange
-        if (sev === "Medium") return "var(--warning)"; // Yellow
-        return "var(--success)"; // Low/Normal
+        if (sev === "Medium") return "var(--warning)"; // Jaune
+        return "var(--success)"; // Bas/Normal
     }
 
 
     async function clearSystemLogs() {
-        if (confirm("Are you sure you want to clear all security logs and alerts?")) {
+        if (confirm("Êtes-vous sûr de vouloir effacer tous les logs et alertes de sécurité ?")) {
             try {
                 await fetch('/api/clear_logs', { method: 'POST' });
                 updateDashboard(); 
-            } catch (e) { console.error("Failed to clear logs:", e); }
+            } catch (e) { console.error("Échec de l'effacement des logs :", e); }
         }
     }
 
@@ -312,21 +312,21 @@
             const response = await fetch('/api/data');
             const data = await response.json();
 
-            // 1. Stats
+            // 1. Mise à jour des statistiques
             document.getElementById('count-logs').innerText = data.log_count;
             document.getElementById('count-alerts').innerText = data.alert_count;
             document.getElementById('count-failed').innerText = data.failed_logins;
             document.getElementById('count-access').innerText = data.access_denied;
 
-            // 2. Recent Threats Table
+            // 2. Tableau des menaces récentes
             const tableBody = document.querySelector('#alerts-table-body');
             tableBody.innerHTML = ''; 
 
             data.alerts.slice(0, 6).forEach(alert => {
-                const type = alert[3] || "Security Alert";
+                const type = alert[3] || "Alerte Sécurité";
                 const msg = alert[1];
                 
-                // استخراج الوقت بذكاء
+                // Extraction intelligente de l'heure
                 let time = "00:00:00";
                 const timeMatch = msg.match(/(\d{2}:\d{2}:\d{2})/);
                 if (timeMatch) time = timeMatch[1];
@@ -348,13 +348,13 @@
                         <td style="font-family: monospace; color: var(--neon-cyan); font-weight: bold;">${time}</td>
                         <td>
                             <div style="font-weight: bold; font-size: 0.9rem;"><i class="fas ${icon}" style="margin-right:8px; opacity:0.6"></i>${type}</div>
-                            <div style="font-size: 0.75rem; color: #94a3b8;">${attackDescriptions[type] || "Suspicious activity detected."}</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">${attackDescriptions[type] || "Activité suspecte détectée."}</div>
                         </td>
                         <td><span class="badge" style="border: 1px solid ${color}; color: ${color}; background: ${color}1a;">${alert[2]}</span></td>
                     </tr>`;
             });
 
-            // 3. Detailed History
+            // 3. Historique détaillé
             const historyBody = document.querySelector('#history-table-body');
             if (historyBody) {
                 historyBody.innerHTML = '';
@@ -370,12 +370,12 @@
                 if (loadMoreBtn) loadMoreBtn.style.display = (visibleLogs >= data.all_logs.length) ? 'none' : 'inline-block';
             }
 
-            // 4. Chart Sync
+            // 4. Synchronisation du graphique
             const ctx = document.getElementById('eventChart').getContext('2d');
             const chartData = {
                 labels: data.event_stats.map(s => s[0]),
                 datasets: [{
-                    label: 'Threat Intensity',
+                    label: 'Intensité de la Menace',
                     data: data.event_stats.map(s => s[1]),
                     backgroundColor: data.event_stats.map(s => getAttackColor(s[0])),
                     borderColor: '#00f2ff', borderWidth: 1, borderRadius: 5
@@ -391,7 +391,7 @@
                 window.myChart.data = chartData; window.myChart.update('none');
             }
 
-        } catch (e) { console.error("Dashboard Sync Error:", e); }
+        } catch (e) { console.error("Erreur de synchronisation du Dashboard :", e); }
     }
 
     function showMoreLogs() { visibleLogs += 10; updateDashboard(); }

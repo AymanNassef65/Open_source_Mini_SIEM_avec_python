@@ -4,10 +4,10 @@ import os
 import sys
 
 def start_siem():
-    # تحديد مسار البايثون داخل الـ venv (للوندوز)
+    # Définir le chemin de Python dans le venv (pour Windows)
     python_path = os.path.join("venv", "Scripts", "python.exe")
     
-    # تأكد أن الـ venv موجودة، إلا ماكانتش نخدمو بالبايثون العادي
+    # S'assurer que le venv existe, sinon utiliser le Python système
     if not os.path.exists(python_path):
         print("[!] Warning: venv not found. Using system python.")
         python_path = "python"
@@ -15,30 +15,30 @@ def start_siem():
     print("🚀 Initializing CyberWolf SIEM System...")
     print("========================================")
 
-    # 1. تصفير قاعدة البيانات (مهم باش تبدا نقي فـ العرض)
+    # 1. Réinitialisation de la base de données (important pour commencer proprement)
     print("[*] Rebuilding Database...")
     subprocess.run([python_path, "init_db.py"])
 
-    # وظيفة مساعدة لفتح نافذة CMD جديدة وتشغيل سكريبت
+    # Fonction d'aide pour ouvrir une nouvelle fenêtre CMD et exécuter un script
     def launch(name, script_path, args=None):
         print(f"[*] Launching {name}...")
         cmd = [python_path, script_path]
         if args: cmd.extend(args)
-        # استخدام start cmd /k كايخلي النافذة مفتوحة باش تشوف الـ Logs
+        # L'utilisation de start cmd /k garde la fenêtre ouverte pour voir les logs
         subprocess.Popen(f'start "{name}" cmd /k "{python_path} {script_path} {" ".join(args or [])}"', shell=True)
 
-    # 2. تشغيل الـ Dashboard
+    # 2. Lancement du Dashboard
     launch("SIEM Dashboard", "app.py")
     time.sleep(2)
 
-    # 3. تشغيل المحرك الرئيسي (Engine)
+    # 3. Lancement du moteur principal (Engine)
     launch("SIEM Engine", "main.py")
 
-    # 4. تشغيل العميل الميداني (Nexus Sentinel - HIDS/NIDS)
-    # ملاحظة: هادا غالباً كايحتاج Admin للصلاحيات ديال الشبكة
+    # 4. Lancement de l'agent de terrain (CyberWolf Sentinel - HIDS/NIDS)
+    # Note : cela nécessite généralement des privilèges Admin pour les permissions réseau
     launch("CyberWolf Agent", "modules/RealTime_System_Monitor.py")
 
-    # 5. تشغيل المحاكي (Simulator)
+    # 5. Lancement du simulateur (Simulator)
     launch("Attack Simulator", "attack_simulator.py")
 
     print("\n✅ SYSTEM ONLINE: CGDSTE3 SIEM is now fully operational.")

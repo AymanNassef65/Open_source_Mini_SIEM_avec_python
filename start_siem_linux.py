@@ -3,7 +3,7 @@ import time
 import os
 
 def start_siem():
-    print("🚀 Nexus SIEM - Linux Launcher (Kali Edition)")
+    print("🚀 CyberWolf SIEM - Linux Launcher (Kali Edition)")
     
     # Chemin vers ton environnement virtuel
     # On suppose que tu as créé ton venv avec 'python3 -m venv venv'
@@ -22,6 +22,7 @@ def start_siem():
         {"name": "DASHBOARD", "cmd": f"{python_venv} app.py"},
         {"name": "ENGINE", "cmd": f"{python_venv} main.py --mode realtime"},
         {"name": "SIMULATOR", "cmd": f"{python_venv} attack_simulator.py"},
+        {"name": "COLLECTOR", "cmd": f"{python_venv} modules/log_collector.py"},
     ]
 
     print("[*] Démarrage des modules standards...")
@@ -31,7 +32,7 @@ def start_siem():
         subprocess.Popen([terminal_cmd, "-e", f"bash -c '{item['cmd']}; exec bash'"])
         time.sleep(1.5)
 
-    # Cas particulier : Nexus_Sentinel (besoin de SUDO pour le sniffing réseau)
+    # Cas particulier : CyberWolf_Sentinel (besoin de SUDO pour le sniffing réseau)
     print("[*] Déploiement de l'agent SENTINEL (Sudo requis pour Scapy)...")
     sentinel_cmd = f"sudo {python_venv} modules/RealTime_System_Monitor.py"
     subprocess.Popen([terminal_cmd, "-e", f"bash -c '{sentinel_cmd}; exec bash'"])

@@ -222,7 +222,7 @@ class AccessDeniedDetector(BaseDetector):
     name     = "Access Denied"
     severity = "Medium"
 
-    PATTERNS = [
+    DENIED_PATTERNS = [
         re.compile(r"ACCESS_DENIED", re.I),
         re.compile(r"Permission denied", re.I),
         re.compile(r"HTTP/\d\.\d\"\s+403\b", re.I),
@@ -234,11 +234,22 @@ class AccessDeniedDetector(BaseDetector):
     )
 
     def analyze(self, line: str) -> Optional[Alert]:
-        if not any(p.search(line) for p in self.PATTERNS):
+        is_denied = any(p.search(line) for p in self.DENIED_PATTERNS)
+        hit_sensitive = self.SENSITIVE_RE.search(line)
+        
+        if not is_denied and not hit_sensitive:
             return None
-        hit = self.SENSITIVE_RE.search(line)
-        sev  = "Critical" if hit else "High"
-        desc = f"Accès refusé à ressource sensible : {hit.group(0)}" if hit else "Accès refusé"
+            
+        if is_denied and hit_sensitive:
+            sev = "Critical"
+            desc = f"Accès REFUSÉ à une ressource sensible : {hit_sensitive.group(0)}"
+        elif hit_sensitive:
+            sev = "High"
+            desc = f"Accès/Référence à une ressource sensible : {hit_sensitive.group(0)}"
+        else:
+            sev = "Medium"
+            desc = "Accès refusé détecté"
+            
         return self._alert(line, desc, sev)
 
 
@@ -248,7 +259,7 @@ class AccessDeniedDetector(BaseDetector):
 
 class DDoSDetector(BaseDetector):
     name     = "DDoS Attempt"
-    severity = "Medium"
+    severity = "Critical"
 
     FLOOD_RE = re.compile(r"INBOUND_FLOOD", re.I)
 
@@ -399,21 +410,39 @@ class PrivilegeEscalationDetector(BaseDetector):
 
 
 # ─────────────────────────────────────────────
+#  9. XSS (Cross-Site Scripting)
+# ─────────────────────────────────────────────
+
+class XSSDetector(BaseDetector):
+    name     = "XSS Attack"
+    severity = "High"
+
+    PATTERNS = [
+        re.compile(r"<script.*?>", re.I),
+        re.compile(r"javascript:", re.I),
+        re.compile(r"onerror\s*=", re.I),
+        re.compile(r"onload\s*=", re.I),
+        re.compile(r"alert\s*\(", re.I),
+        re.compile(r"String\.fromCharCode", re.I),
+        re.compile(r"eval\s*\(", re.I),
+        re.compile(r"document\.cookie", re.I),
+    ]
+
+    def analyze(self, line: str) -> Optional[Alert]:
+        matched = [p.pattern for p in self.PATTERNS if p.search(line)]
+        if not matched:
+            return None
+        return self._alert(line, f"Tentative XSS détectée : {', '.join(matched)}")
+
+# ─────────────────────────────────────────────
 #  Watchdog — orchestrateur principal
 # ─────────────────────────────────────────────
 
 class Watchdog:
     """
-    Passe chaque ligne à travers les 8 détecteurs.
+    Passe chaque ligne à travers les 9 détecteurs.
     Silencieux par défaut : pas de print, pas d'accès DB.
     C'est main.py qui décide quoi faire avec les alertes retournées.
-
-    Exemple (dans main.py) :
-        wdog = Watchdog()
-        alerts = wdog.analyze(line)
-        for a in alerts:
-            insert_log(timestamp, a.description, a.attack_type)
-            insert_alert(a.description, a.severity)
     """
 
     def __init__(
@@ -434,6 +463,7 @@ class Watchdog:
             RansomwareDetector(),
             CredentialStuffingDetector(cred_threshold),
             PrivilegeEscalationDetector(),
+            XSSDetector(),
         ]
         self.alert_history: list[Alert] = []
         self._lock = threading.Lock()

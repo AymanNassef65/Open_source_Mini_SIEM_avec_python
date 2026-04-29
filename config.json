@@ -10,5 +10,21 @@
 
   "dashboard": {
     "refresh_interval": 5
+  },
+
+  "notifications": {
+    "enabled": true,
+    "batch_interval": 60,
+    "telegram": {
+      "enabled": true,
+      "token": "8574644833:AAFW3WbbTI_0CnOqsHlQt_glqcwkt8rOrQc",
+      "chat_id": "5030424011"
+    },
+    "email": {
+      "enabled": true,
+      "sender": "aymannassif65@gmail.com",
+      "password": "pkbrbzqnysclusrg",
+      "receiver": "youssefnassif65@gmail.com"
+    }
   }
 }
