@@ -2,19 +2,13 @@ import sqlite3
 import time
 import os
 import threading
-import socket
-import re
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from threat_engine import Watchdog
 from notifier import add_to_batch
 
-# --- SAFETY IMPORTS ---
-try:
-    import win32evtlog
-    WINDOWS_EVENTS_READY = True
-except ImportError:
-    WINDOWS_EVENTS_READY = False
+WINDOWS_EVENTS_READY = False
 
 try:
     from scapy.all import sniff, IP, Raw, TCP, UDP

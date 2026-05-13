@@ -9,31 +9,40 @@ sys.path.append(os.path.join(os.getcwd(), 'modules'))
 
 from modules.threat_engine import Watchdog
 
-DB_PATH = "database/siem.db"
+# Test uses user_1's database (create it if needed)
+USER_ID = 1
+DB_PATH = f"database/user_{USER_ID}/siem.db"
 
 def test_detection():
     print("=============================================")
     print("   CyberWolf ENGINE - SUITE DE TEST INTÉGRALE    ")
     print("=============================================")
+
+    # Ensure test user DB exists
+    from init_db import create_user_db, init_users_db
+    init_users_db()
+    create_user_db(USER_ID)
     
     # Initialisation du moteur avec des seuils bas pour le test
     wdog = Watchdog(brute_threshold=3, port_threshold=5, ddos_threshold=10, cred_threshold=3)
     
     # 1. Attaques basées sur des signatures (Déclenchement immédiat)
     test_signatures = [
-        ("SQL INJECTION", "UNION SELECT NULL, username, password FROM users --"),
-        ("SCANNER RÉSEAU", "Reconnaissance via nmap -sC -sV localhost"),
-        ("ACCÈS SENSIBLE", "Tentative de lecture de /etc/shadow"),
-        ("RANSOMWARE", "Alerte : Fichier chiffré détecté .locked"),
-        ("SIGNATURE DDOS", "ALERTE SYSTÈME : INBOUND_FLOOD détecté"),
-        ("CREDENTIAL STUFFING", "LOGIN_ATTEMPT_MANY_ACCOUNTS source=10.0.0.1"),
-        ("ESCALADE PRIVILÈGES", "CRITICAL: useradd uid=0 detected"),
+        ("SQL INJECTION",        "UNION SELECT NULL, username, password FROM users --"),
+        ("SCANNER RÉSEAU",       "Reconnaissance via nmap -sC -sV localhost"),
+        ("ACCÈS SENSIBLE",       "Tentative de lecture de /etc/shadow"),
+        ("ACCESS DENIED",        "ACCESS_DENIED: user=guest resource=/etc/passwd"),
+        ("RANSOMWARE",           "Alerte : Fichier chiffré détecté .locked"),
+        ("SIGNATURE DDOS",       "ALERTE SYSTÈME : INBOUND_FLOOD détecté"),
+        ("CREDENTIAL STUFFING",  "LOGIN_ATTEMPT_MANY_ACCOUNTS source=10.0.0.1"),
+        ("ESCALADE PRIVILÈGES",  "CRITICAL: useradd uid=0 detected"),
+        ("XSS ATTACK",           "GET /search?q=<script>alert(document.cookie)</script> from 1.2.3.4"),
     ]
     
     # 2. Attaques basées sur des seuils (Nécessitent plusieurs répétitions)
     test_thresholds = [
         ("BRUTE FORCE", "LOGIN_FAILED for user admin from 1.1.1.1", 4),
-        ("PORT SCANNING", "CONNECTION_ATTEMPT: source=2.2.2.2 port=", 6), # Le port sera ajouté dynamiquement
+        ("PORT SCANNING", "CONNECTION_ATTEMPT: source=2.2.2.2 port=", 6),
     ]
     
     conn = sqlite3.connect(DB_PATH)

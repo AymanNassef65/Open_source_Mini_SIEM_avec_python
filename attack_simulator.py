@@ -37,7 +37,12 @@ def generate_complex_log():
         
         # Escalade de Privilèges
         f"sudo: user {ip_source} not in sudoers ; COMMAND=/usr/bin/apt-get install nmap",
-        f"Privilege Escalation attempt: useradd uid=0 detected"
+        f"Privilege Escalation attempt: useradd uid=0 detected",
+
+        # XSS Attack
+        f"HTTP GET /search?q=<script>alert(document.cookie)</script> from {external_ip}",
+        f"WAF ALERT: XSS pattern detected: javascript:eval(String.fromCharCode(97,108,101,114,116)) from {external_ip}",
+        f"ACCESS_LOG: {external_ip} GET /comment?text=<img onerror=alert(1) src=x> 200",
     ]
     return random.choice(scenarios)
 

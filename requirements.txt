@@ -1,3 +1,5 @@
 flask
+werkzeug
 scapy
 watchdog
+pywin32

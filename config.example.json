@@ -1,0 +1,27 @@
+{
+  "log_file": "logs/auth.log",
+  "detection": {
+    "bruteforce_threshold": 3,
+    "access_abuse_threshold": 3,
+    "suspicious_activity_threshold": 5,
+    "time_window_seconds": 10
+  },
+  "dashboard": {
+    "refresh_interval": 5
+  },
+  "notifications": {
+    "enabled": true,
+    "batch_interval": 60,
+    "telegram": {
+      "enabled": false,
+      "token": "YOUR_TELEGRAM_BOT_TOKEN_HERE",
+      "chat_id": "YOUR_TELEGRAM_CHAT_ID_HERE"
+    },
+    "email": {
+      "enabled": false,
+      "sender": "your_email@gmail.com",
+      "password": "YOUR_APP_PASSWORD_HERE",
+      "receiver": "receiver_email@example.com"
+    }
+  }
+}

@@ -1,7 +1,6 @@
 import subprocess
 import time
 import os
-import sys
 
 def start_siem():
     # Définir le chemin de Python dans le venv (pour Windows)

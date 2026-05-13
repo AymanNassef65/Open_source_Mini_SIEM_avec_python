@@ -43,12 +43,15 @@ def analyze_and_log(event_data):
     # Log dans le fichier JSONL
     logger.info(event_data)
     
-    # Analyse de sécurité
     raw_text = event_data.get("raw_log", "") or event_data.get("action", "")
     if raw_text:
+        # Appends to the shared auth.log so main.py monitor can process it and send to dashboard
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/auth.log", "a") as f:
+            f.write(raw_text + "\n")
+            
         alerts = wdog.analyze(raw_text)
         for a in alerts:
-            # On pourrait ici aussi insérer en DB, mais on va au moins notifier
             print(f"\033[91m[!] ALERTE COLLECTEUR : {a.attack_type}\033[0m")
             add_to_batch(a.attack_type, a.severity, f"[Collector] {a.description}")
 
@@ -113,7 +116,7 @@ def collect_port_logs(port, logger):
                 "log_type": "port",
                 "source_ip": source_ip,
                 "target_port": port,
-                "action": f"Tentative de connexion sur port {port}"
+                "action": f"CONNECTION_ATTEMPT: source_ip={source_ip} target_port={port} status=REFUSED"
             }
             
             analyze_and_log(port_event)

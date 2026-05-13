@@ -1,53 +1,42 @@
 import sqlite3
+import os
 
-DB_PATH = "database/siem.db"
+USERS_DB = "database/users.db"
 
-def connect_db():
-    conn = sqlite3.connect(DB_PATH, timeout=10)
+
+def connect_users_db():
+    """Connect to the shared auth database."""
+    os.makedirs("database", exist_ok=True)
+    conn = sqlite3.connect(USERS_DB, timeout=10)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
-def init_db():
-    conn = connect_db()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            event TEXT,
-            attack_type TEXT
-        )
-    """)
+def connect_user_db(user_id):
+    """Connect to a specific user's private siem.db."""
+    db_path = f"database/user_{user_id}/siem.db"
+    if not os.path.exists(db_path):
+        from init_db import create_user_db
+        create_user_db(user_id)
+    conn = sqlite3.connect(db_path, timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS alerts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            message TEXT,
-            severity TEXT
-        )
-    """)
 
+def insert_log(user_id, timestamp, event, attack_type="Normal"):
+    conn = connect_user_db(user_id)
+    conn.execute(
+        "INSERT INTO logs (timestamp, event, attack_type) VALUES (?, ?, ?)",
+        (timestamp, event, attack_type))
     conn.commit()
     conn.close()
 
-def insert_log(timestamp, event, attack_type="Normal"):
-    conn = connect_db()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-        INSERT INTO logs (timestamp, event, attack_type)
-        VALUES (?, ?, ?)
-    """, (timestamp, event, attack_type))
-
-    conn.commit()
-    conn.close()
-
-def insert_alert(message, severity, attack_type="Unknown"):
-    conn = connect_db()
-    cursor = conn.cursor()
-    # On s'assure d'insérer les 3 valeurs
-    cursor.execute("INSERT INTO alerts (message, severity, attack_type) VALUES (?, ?, ?)", 
-                   (message, severity, attack_type))
+def insert_alert(user_id, message, severity, attack_type="Unknown", source_ip=None):
+    conn = connect_user_db(user_id)
+    conn.execute(
+        "INSERT INTO alerts (message, severity, attack_type, source_ip, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (message, severity, attack_type, source_ip,
+         __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     conn.commit()
     conn.close()

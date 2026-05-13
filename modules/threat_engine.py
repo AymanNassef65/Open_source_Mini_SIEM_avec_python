@@ -189,7 +189,7 @@ class PortScanDetector(BaseDetector):
             ip, port = m.group("ip"), m.group("port")
         elif self.CONN_RE.search(line):
             ip = _extract_ip(line)
-            pm = re.search(r":(\d+)", line)
+            pm = re.search(r"(?:port=|:)\s*(\d+)", line, re.I)
             port = pm.group(1) if pm else "?"
 
         if not ip:
@@ -241,14 +241,14 @@ class AccessDeniedDetector(BaseDetector):
             return None
             
         if is_denied and hit_sensitive:
-            sev = "Critical"
-            desc = f"Accès REFUSÉ à une ressource sensible : {hit_sensitive.group(0)}"
+            sev = "Medium"
+            desc = f"Access DENIED to sensitive resource: {hit_sensitive.group(0)}"
         elif hit_sensitive:
-            sev = "High"
-            desc = f"Accès/Référence à une ressource sensible : {hit_sensitive.group(0)}"
+            sev = "Medium"
+            desc = f"Access to sensitive resource: {hit_sensitive.group(0)}"
         else:
             sev = "Medium"
-            desc = "Accès refusé détecté"
+            desc = "Access denied detected"
             
         return self._alert(line, desc, sev)
 
